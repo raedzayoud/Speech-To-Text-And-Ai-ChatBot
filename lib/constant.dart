@@ -1,0 +1,1 @@
+const String Api_Gemeni_Key="AIzaSyBcR1cJHnTL88oTcmvWSkQtNpdpB0Hmrjk";

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:speach_to_text/speach_to_text.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:speach_to_text/constant.dart';
+import 'package:speach_to_text/gemini_chat.dart';
 
 void main() {
+  Gemini.init(apiKey: Api_Gemeni_Key);
   runApp(const MyApp());
 }
 
@@ -12,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const SpeachToTexts(),
+      home: const GeminiChat(),
     );
   }
 }
