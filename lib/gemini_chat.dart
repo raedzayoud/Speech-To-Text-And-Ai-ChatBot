@@ -9,10 +9,12 @@ class GeminiChat extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: Text("Gemini Chat"),
+        title: Text(
+          "Ai ChatBot",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: GeminiChatBody(),
-
     );
   }
 }

@@ -1,6 +1,8 @@
-import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:speach_to_text/constant.dart';
+import 'package:speach_to_text/widgets/gemini/chat_bubble.dart';
+import 'package:speach_to_text/widgets/gemini/chat_message.dart';
 
 class GeminiChatBody extends StatefulWidget {
   const GeminiChatBody({super.key});
@@ -10,40 +12,82 @@ class GeminiChatBody extends StatefulWidget {
 }
 
 class _GeminiChatBodyState extends State<GeminiChatBody> {
-  List<ChatMessage> Listmessage = [];
-  final Gemini gemini = Gemini.instance;
-  ChatUser currentUser = ChatUser(id: "0", firstName: "user");
-  ChatUser geminiUser = ChatUser(
-      id: "1",
-      firstName: "Gemini");
-      // profileImage:
-      //     "https://upload.wikimedia.org/wikipedia/commons/8/8a/Google_Gemini_logo.svg");
+  late GenerativeModel model;
+  late final ChatSession chat;
+  final ScrollController scrollController = ScrollController();
+  final TextEditingController controller = TextEditingController();
+  final List<ChatMessage> messages = [];
   @override
-  Widget build(BuildContext context) {
-    return DashChat(
-        currentUser: currentUser, onSend: _sendMessage, messages: Listmessage);
+  void initState() {
+    model = GenerativeModel(apiKey: Api_Gemeni_Key, model: modelType);
+    chat = model.startChat();
+    super.initState();
   }
 
-  void _sendMessage(ChatMessage chatMessage) {
+  void ScrollDown() {
+    WidgetsBinding.instance.addPostFrameCallback((_) =>
+        scrollController.animateTo(scrollController.position.maxScrollExtent,
+            duration: Duration(milliseconds: 650), curve: Curves.easeOutCirc));
+  }
+
+  Future<void> sendMessage(String message) async {
     setState(() {
-      Listmessage.insert(0, chatMessage);
+      messages.add(ChatMessage(message, true));
     });
     try {
-      String question = chatMessage.text;
-      gemini.streamGenerateContent(question).listen((event) {
-        ChatMessage? lastmessage = Listmessage.firstOrNull;
-        if (lastmessage != null && lastmessage.user == geminiUser) {
-        } else {
-          String response = event.content?.parts
-                  ?.fold("", (previous, current) => "${previous}${current}") ??
-              "";
-          ChatMessage message =
-              ChatMessage(user: geminiUser, createdAt: DateTime.now(),text: response);
-              setState(() {
-                Listmessage.insert(0, message);
-              });
-        }
+      final response = await chat.sendMessage(Content.text(message));
+      final text = response.text;
+      setState(() {
+        messages.add(ChatMessage(text!, false));
+        ScrollDown();
       });
-    } catch (e) {}
+    } catch (e) {
+      setState(() {
+        messages.add(ChatMessage("Error Occured", false));
+      });
+    } finally {
+      controller.clear();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+            child: Container(
+              color: const Color.fromARGB(255, 224, 217, 217),
+              child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    return ChatBubble(chatMessage: messages[index]);
+                  }),
+            )),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                  child: TextField(
+                controller: controller,
+                decoration: InputDecoration(
+                    hintText: 'Enter a message',
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20))),
+              )),
+              IconButton(
+                  onPressed: () {
+                    sendMessage(controller.text);
+                  },
+                  icon: Icon(
+                    Icons.send,
+                    color: Colors.blue,
+                  ))
+            ],
+          ),
+        )
+      ],
+    );
   }
 }
